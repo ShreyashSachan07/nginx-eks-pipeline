@@ -37,7 +37,7 @@ pipeline {
 
         stage('Sysdig Pipeline Scan') {
             steps {
-                sysdig-cli-scanner --apiurl $SYSDIG_SECURE_URL $AWS_ECR_REPO_NAME
+                sh 'sysdig-cli-scanner --apiurl $SYSDIG_SECURE_URL $AWS_ECR_REPO_NAME'
             }
         }
       
