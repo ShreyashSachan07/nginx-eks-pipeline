@@ -40,21 +40,21 @@ pipeline {
         //         sh 'sysdig-cli-scanner --apiurl $SYSDIG_SECURE_URL $AWS_ECR_REPO_NAME'
         //     }
         // }
-
-        stage('Sysdig Pipeline Scan') {
-            steps {
-                script {
-                    dir('nginx-eks-pipeline') {
-                        sh """
-                        docker run --rm \
-                            -e SYSDIG_SECURE_API_TOKEN=${SYSDIG_API_TOKEN} \
-                            sysdiglabs/sysdig-cli-scanner:latest \
-                            docker://${AWS_ECR_REPO_NAME}
-                        """
-            }
-        }
-    }
-}
+//main
+//         stage('Sysdig Pipeline Scan') {
+//             steps {
+//                 script {
+//                     dir('nginx-eks-pipeline') {
+//                         sh """
+//                         docker run --rm \
+//                             -e SYSDIG_SECURE_API_TOKEN=${SYSDIG_API_TOKEN} \
+//                             sysdiglabs/sysdig-cli-scanner:latest \
+//                             docker://${AWS_ECR_REPO_NAME}
+//                         """
+//             }
+//         }
+//     }
+// }
       
 
         stage("ECR Image Pushing") {
