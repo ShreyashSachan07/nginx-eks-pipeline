@@ -6,6 +6,7 @@ pipeline {
     environment  {
         AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
         AWS_ECR_REPO_NAME = credentials('ECR_REPO1')
+        SYSDIG_API_TOKEN = credentials('sysdig-token')
         AWS_DEFAULT_REGION = 'us-east-1'
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/"
         SYSDIG_SECURE_URL = 'https://app.sysdigcloud.com'
@@ -36,7 +37,7 @@ pipeline {
 
         stage('Sysdig Pipeline Scan') {
             steps {
-                sh 'sysdig-cli-scanner --apiurl $SYSDIG_SECURE_URL $IMAGE_NAME'
+                sysdig-cli-scanner --apiurl $SYSDIG_SECURE_URL $AWS_ECR_REPO_NAME
             }
         }
       
