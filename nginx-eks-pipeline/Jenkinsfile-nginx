@@ -8,6 +8,7 @@ pipeline {
         AWS_ECR_REPO_NAME = credentials('ECR_REPO1')
         AWS_DEFAULT_REGION = 'us-east-1'
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/"
+        SYSDIG_SECURE_URL = 'https://app.sysdigcloud.com'
     }
     stages {
         stage('Cleaning Workspace') {
@@ -33,15 +34,12 @@ pipeline {
             }
         }
 
-        stage('Sysdig Inline Scan') {
+        stage('Sysdig Pipeline Scan') {
             steps {
-                withCredentials([string(credentialsId: 'sysdig-api-token', variable: 'SYSDIG_API_TOKEN')]) {
-                    sh '''
-                    docker run --rm             -v /var/run/docker.sock:/var/run/docker.sock             -v $(pwd):/app             sysdiglabs/inline-scan:latest             --sysdig-url https://secure.sysdig.com             --api-token $SYSDIG_API_TOKEN             --input-image $REGISTRY/$IMAGE_NAME:$TAG             --fail-on-critical-vulns
-                    '''
+                sh 'sysdig-cli-scanner --apiurl $SYSDIG_SECURE_URL $IMAGE_NAME'
+            }
         }
-      }
-    }
+      
 
         stage("ECR Image Pushing") {
             steps {
@@ -51,6 +49,12 @@ pipeline {
                         sh 'docker tag ${AWS_ECR_REPO_NAME} ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}'
                         sh 'docker push ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}'
                 }
+            }
+        }
+
+        stage('Sysdig Registry Scan (ECR)') {
+            steps {
+                sh 'sysdig-cli-scanner --apiurl $SYSDIG_SECURE_URL $ECR_REGISTRY/$IMAGE_NAME:latest'
             }
         }
 
