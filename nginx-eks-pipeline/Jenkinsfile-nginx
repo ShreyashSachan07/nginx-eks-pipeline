@@ -137,7 +137,7 @@ pipeline {
 
         stage('Scan image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'sysdig-secure-api-token', passwordVariable: 'SECURE_API_TOKEN', usernameVariable: '')]) {
+                withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SECURE_API_TOKEN')]) {
                  sh '''
                     VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
                     curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
