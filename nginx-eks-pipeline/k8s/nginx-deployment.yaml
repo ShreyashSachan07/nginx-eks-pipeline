@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: ghcr.io/yourusername/nginx-demo:latest
+        image: 851725549954.dkr.ecr.us-east-1.amazonaws.com/nginx-repo:17
         ports:
         - containerPort: 80
 
