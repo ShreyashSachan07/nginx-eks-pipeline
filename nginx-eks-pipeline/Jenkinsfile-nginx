@@ -119,14 +119,16 @@ pipeline {
 
         stage('Sysdig Local Image Scan') {
             steps {
-                script {
-                    sysdigSecureInlineScan(
-                        sysdigSecureCredentialsId: "${SYSDIG_SECURE_CREDENTIALS_ID}", // Corrected
-                        imageId: "${AWS_ECR_REPO_NAME}",  // Corrected parameter name
-                        engineUrl: "${SYSDIG_SECURE_URL}", // Added engineUrl
-                        bailOnPluginFail: true
-                    )
-                }
+
+                sysdigImageScan engineCredentialsId: 'sysdig-secure-api-credentials', imageName: "${params.DOCKER_REPOSITORY}"
+                // script {
+                //     sysdigSecureInlineScan(
+                //         sysdigSecureCredentialsId: "${SYSDIG_SECURE_CREDENTIALS_ID}", // Corrected
+                //         imageId: "${AWS_ECR_REPO_NAME}",  // Corrected parameter name
+                //         engineUrl: "${SYSDIG_SECURE_URL}", // Added engineUrl
+                //         bailOnPluginFail: true
+                //     )
+                // }
             }
         }
 
