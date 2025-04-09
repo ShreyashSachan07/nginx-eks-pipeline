@@ -89,10 +89,10 @@ pipeline {
         AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
         AWS_CREDS = credentials('aws-creds')
         AWS_ECR_REPO_NAME = credentials('ECR_REPO1')
-        SYSDIG_API_TOKEN = credentials('sysdig-token')  // stored in Jenkins credentials
         AWS_DEFAULT_REGION = 'us-east-1'
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-        SYSDIG_SECURE_URL = 'https://app.sysdigcloud.com'
+        SYSDIG_SECURE_CREDENTIALS_ID = 'sysdig-secure-api-credentials' // Correct credential ID
+        SYSDIG_SECURE_URL = 'https://secure.sysdig.com' // Correct Sysdig Secure URL
     }
     stages {
         stage('Cleaning Workspace') {
@@ -121,9 +121,10 @@ pipeline {
             steps {
                 script {
                     sysdigSecureInlineScan(
-                        engineCredentialsId: 'sysdig-token',
-                        bailOnPluginFail: true,
-                        imageName: "${AWS_ECR_REPO_NAME}"
+                        sysdigSecureCredentialsId: "${SYSDIG_SECURE_CREDENTIALS_ID}", // Corrected
+                        imageId: "${AWS_ECR_REPO_NAME}",  // Corrected parameter name
+                        engineUrl: "${SYSDIG_SECURE_URL}", // Added engineUrl
+                        bailOnPluginFail: true
                     )
                 }
             }
@@ -143,9 +144,10 @@ pipeline {
             steps {
                 script {
                     sysdigSecureRegistryImageScan(
-                        engineCredentialsId: 'sysdig-token',
-                        bailOnPluginFail: true,
-                        imageName: "${REPOSITORY_URI}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}"
+                        sysdigSecureCredentialsId: "${SYSDIG_SECURE_CREDENTIALS_ID}", // Corrected
+                        imageId: "${REPOSITORY_URI}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}", // Corrected parameter name
+                        engineUrl: "${SYSDIG_SECURE_URL}", // Added engineUrl
+                        bailOnPluginFail: true
                     )
                 }
             }
