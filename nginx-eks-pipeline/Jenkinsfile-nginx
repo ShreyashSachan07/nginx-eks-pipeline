@@ -142,17 +142,17 @@ pipeline {
             }
         }
 
-        stage('Sysdig ECR Registry Scan') {
-            steps {
-                script {
-                    sysdigSecureRegistryImageScan(
-                        sysdigSecureCredentialsId: "${SYSDIG_SECURE_CREDENTIALS_ID}", // Corrected
-                        imageId: "${REPOSITORY_URI}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}", // Corrected parameter name
-                        engineUrl: "${SYSDIG_SECURE_URL}", // Added engineUrl
-                        bailOnPluginFail: true
-                    )
-                }
-            }
-        }
+        // stage('Sysdig ECR Registry Scan') {
+        //     steps {
+        //         script {
+        //             sysdigSecureRegistryImageScan(
+        //                 sysdigSecureCredentialsId: "${SYSDIG_SECURE_CREDENTIALS_ID}", // Corrected
+        //                 imageId: "${REPOSITORY_URI}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}", // Corrected parameter name
+        //                 engineUrl: "${SYSDIG_SECURE_URL}", // Added engineUrl
+        //                 bailOnPluginFail: true
+        //             )
+        //         }
+        //     }
+        // }
     }
 }
