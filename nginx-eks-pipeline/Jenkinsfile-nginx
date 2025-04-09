@@ -96,6 +96,8 @@ pipeline {
         SYSDIG_SECURE_API_TOKEN = credentials('sysdig-secure-api-token')
         SYSDIG_ENDPOINT = 'https://secure.sysdig.com' // <-- Add this (or wherever your Sysdig scanner is)
         DOCKER_REPOSITORY = "${AWS_ECR_REPO_NAME}" // <-- Add this
+        SYSDIG_SECURE_TOKEN='f7a2b53d-1a31-460d-a1f0-2d14f403ff7c'
+
     }
     stages {
         stage('Cleaning Workspace') {
@@ -142,11 +144,13 @@ pipeline {
                     VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
                     curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
                     chmod +x ./sysdig-cli-scanner
-                    ./sysdig-cli-scanner verify --apiurl https://secure.sysdig.com --token f7a2b53d-1a31-460d-a1f0-2d14f403ff7c
+                    export SYSDIG_SECURE_TOKEN=${SECURE_API_TOKEN}
+                    ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT} docker://${DOCKER_REPOSITORY}
                     '''
-                }
-      }
+        }
     }
+}
+
 
         stage('ECR Image Pushing') {
             steps {
