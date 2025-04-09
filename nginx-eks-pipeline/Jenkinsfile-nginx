@@ -89,7 +89,7 @@ pipeline {
         AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
         AWS_CREDS = credentials('aws-creds')
         AWS_ECR_REPO_NAME = credentials('ECR_REPO1')
-        SYSDIG_API_TOKEN = credentials('sysdig-token')
+        SYSDIG_API_TOKEN = credentials('sysdig-token')  // stored in Jenkins credentials
         AWS_DEFAULT_REGION = 'us-east-1'
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
         SYSDIG_SECURE_URL = 'https://app.sysdigcloud.com'
@@ -106,8 +106,8 @@ pipeline {
                 git branch: 'main', credentialsId: 'GITHUB', url: 'https://github.com/ShreyashSachan07/nginx-eks-pipeline.git'
             }
         }
-
-        stage("Docker Image Build") {
+        
+        stage('Docker Image Build') {
             steps {
                 script {
                     dir('nginx-eks-pipeline') {
@@ -117,19 +117,19 @@ pipeline {
             }
         }
 
-        // 🛡️ Sysdig Scan BEFORE pushing to ECR
         stage('Sysdig Local Image Scan') {
             steps {
-                sysdigImageScan(
-                    apiTokenCredentialsId: 'sysdig-token',
-                    imageName: "${AWS_ECR_REPO_NAME}",
-                    failOnPolicyEvaluation: true,
-                    dockerImageIdAsReference: true
-                )
+                script {
+                    sysdigSecureInlineScan(
+                        engineCredentialsId: 'sysdig-token',
+                        bailOnPluginFail: true,
+                        imageName: "${AWS_ECR_REPO_NAME}"
+                    )
+                }
             }
         }
 
-        stage("ECR Image Pushing") {
+        stage('ECR Image Pushing') {
             steps {
                 script {
                     sh 'aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}'
@@ -139,14 +139,15 @@ pipeline {
             }
         }
 
-        // 🛡️ Sysdig Scan AFTER pushing to ECR
-        stage('Sysdig Registry Image Scan (ECR)') {
+        stage('Sysdig ECR Registry Scan') {
             steps {
-                sysdigImageScan(
-                    apiTokenCredentialsId: 'sysdig-token',
-                    imageName: "${REPOSITORY_URI}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}",
-                    failOnPolicyEvaluation: true
-                )
+                script {
+                    sysdigSecureRegistryImageScan(
+                        engineCredentialsId: 'sysdig-token',
+                        bailOnPluginFail: true,
+                        imageName: "${REPOSITORY_URI}/${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}"
+                    )
+                }
             }
         }
     }
