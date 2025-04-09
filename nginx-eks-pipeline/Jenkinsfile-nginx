@@ -93,7 +93,7 @@ pipeline {
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
         SYSDIG_SECURE_CREDENTIALS_ID = 'sysdig-secure-api-credentials'
         SYSDIG_SECURE_URL = 'https://secure.sysdig.com'
-
+        SYSDIG-SECURE-API-TOKEN = credentials('sysdig-secure-api-token')
         SYSDIG_ENDPOINT = 'https://secure.sysdig.com' // <-- Add this (or wherever your Sysdig scanner is)
         DOCKER_REPOSITORY = "${AWS_ECR_REPO_NAME}" // <-- Add this
     }
