@@ -85,6 +85,12 @@ pipeline {
     tools {
         nodejs 'nodejs'
     }
+
+    parameters { 
+        string(name: 'DOCKER_REPOSITORY', defaultValue: 'sysdigcicd/cronagent', description: 'Name of the image to be built (e.g.: sysdiglabs/dummy-vuln-app)') 
+        string(name: 'GIT_REPOSITORY', defaultValue: 'https://github.com/sysdiglabs/secure-inline-scan-examples.git', description: 'Name of the repository with the Dockerfile to be built (e.g.: https://github.com/sysdiglabs/secure-inline-scan-examples.git)') 
+        string(name: 'SYSDIG_ENDPOINT', defaultValue: 'https://eu1.app.sysdig.com', description: 'The appropriate Sysdig vulnerability scanning endpoint depending on your region, see https://docs.sysdig.com/en/docs/administration/saas-regions-and-ip-ranges')
+    }
     environment {
         AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
         AWS_CREDS = credentials('aws-creds')
@@ -96,7 +102,7 @@ pipeline {
         SYSDIG_SECURE_API_TOKEN = credentials('sysdig-secure-api-token')
         SYSDIG_ENDPOINT = 'https://secure.sysdig.com' // <-- Add this (or wherever your Sysdig scanner is)
         DOCKER_REPOSITORY = "${AWS_ECR_REPO_NAME}" // <-- Add this
-        SYSDIG_SECURE_TOKEN='f7a2b53d-1a31-460d-a1f0-2d14f403ff7c'
+        //SYSDIG_SECURE_TOKEN='f7a2b53d-1a31-460d-a1f0-2d14f403ff7c'
 
     }
     stages {
@@ -122,6 +128,20 @@ pipeline {
             }
         }
 
+
+        stage('Scan image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'sysdig-secure-api-token', passwordVariable: 'SECURE_API_TOKEN', usernameVariable: '')]) {
+                    sh '''
+                    VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
+                    curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
+                    chmod +x ./sysdig-cli-scanner
+                    ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT} docker://${DOCKER_REPOSITORY}
+                    '''
+                }
+            }
+        }
+
         // stage('Sysdig Local Image Scan') {
         //     steps {
 
@@ -137,19 +157,19 @@ pipeline {
         //     }
         // }
 
-        stage('Scan image') {
-            steps {
-                withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SECURE_API_TOKEN')]) {
-                    sh '''
-                    VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
-                    curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
-                    chmod +x ./sysdig-cli-scanner
-                    export SYSDIG_SECURE_TOKEN=${SECURE_API_TOKEN}
-                    ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT} docker://${DOCKER_REPOSITORY}
-                    '''
-        }
-    }
-}
+//         stage('Scan image') {
+//             steps {
+//                 withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SECURE_API_TOKEN')]) {
+//                     sh '''
+//                     VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
+//                     curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
+//                     chmod +x ./sysdig-cli-scanner
+//                     export SYSDIG_SECURE_TOKEN=${SECURE_API_TOKEN}
+//                     ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT} docker://${DOCKER_REPOSITORY}
+//                     '''
+//         }
+//     }
+// }
 
 
         stage('ECR Image Pushing') {
@@ -174,5 +194,17 @@ pipeline {
         //         }
         //     }
         // }
+
+        // stage('Deploy to EKS') {
+        //     steps {
+        //         script {
+        //             sh  '''
+        //                 aws eks update-kubeconfig --region ${AWS_DEFAULT_REGION} --name <YOUR_CLUSTER_NAME>
+        //                 kubectl apply -f nginx-eks-pipeline/k8s/deployment.yaml
+        //                 '''
+        //                  }
+        //         }
+        //     }
+
     }
 }
