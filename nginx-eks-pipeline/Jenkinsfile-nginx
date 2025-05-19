@@ -158,19 +158,19 @@ pipeline {
         //     }
         // }
 
-//         stage('Scan image') {
-//             steps {
-//                 withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SECURE_API_TOKEN')]) {
-//                     sh '''
-//                     VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
-//                     curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
-//                     chmod +x ./sysdig-cli-scanner
-//                     export SYSDIG_SECURE_TOKEN=${SECURE_API_TOKEN}
-//                     ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT} docker://${DOCKER_REPOSITORY}
-//                     '''
-//         }
-//     }
-// }
+        stage('Scan image') {
+            steps {
+                withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SECURE_API_TOKEN')]) {
+                    sh '''
+                    VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
+                    curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
+                    chmod +x ./sysdig-cli-scanner
+                    export SYSDIG_SECURE_TOKEN=${SECURE_API_TOKEN}
+                    SECURE_API_TOKEN="355724e1-2500-4666-bee2-5c323bddb2a1" ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT}  docker://${DOCKER_REPOSITORY} 
+                    '''
+        }
+    }
+}
 
 
         stage('ECR Image Pushing') {
