@@ -16,20 +16,6 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: 851725549954.dkr.ecr.us-east-1.amazonaws.com/nginx-repo:17
+        image: 8851725549954.dkr.ecr.us-east-1.amazonaws.com/nginx-repo
         ports:
         - containerPort: 80
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-service
-spec:
-  type: LoadBalancer
-  selector:
-    app: nginx
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80

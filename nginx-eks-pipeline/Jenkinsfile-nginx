@@ -1,3 +1,4 @@
+
 //main till line 80 
 
 // pipeline {
@@ -98,10 +99,10 @@ pipeline {
         AWS_DEFAULT_REGION = 'us-east-1'
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
         SYSDIG_SECURE_CREDENTIALS_ID = 'sysdig-secure-api-credentials'
-        SYSDIG_SECURE_URL = 'https://secure.sysdig.com'
+        SYSDIG_SECURE_URL = ''
         //SYSDIG_SECURE_API_TOKEN = credentials('sysdig-secure-api-token')
         SECURE_API_TOKEN = credentials('sysdig-secure-api-token')
-        SYSDIG_ENDPOINT = 'https://secure.sysdig.com' // <-- Add this (or wherever your Sysdig scanner is)
+        SYSDIG_ENDPOINT = 'https://app.us4.sysdig.com' // <-- Add this (or wherever your Sysdig scanner is)
         DOCKER_REPOSITORY = "${AWS_ECR_REPO_NAME}" // <-- Add this
         //SYSDIG_SECURE_TOKEN='f7a2b53d-1a31-460d-a1f0-2d14f403ff7c'
 
@@ -130,18 +131,18 @@ pipeline {
         }
 
 
-        stage('Scan image') {
-            steps {
-                withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SYSDIG_SECURE_TOKEN')]) {
-                    sh '''
-                    VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
-                    curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
-                    chmod +x ./sysdig-cli-scanner
-                    ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT} docker://${DOCKER_REPOSITORY}
-                    '''
-                }
-            }
-        }
+        // stage('Scan image') { XXXXXXXXXX-----------MAIN-------------------------XXXXXXXX
+        //     steps {
+        //         withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SYSDIG_SECURE_TOKEN')]) {
+        //             sh '''
+        //             VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
+        //             curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
+        //             chmod +x ./sysdig-cli-scanner
+        //             ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT} docker://${DOCKER_REPOSITORY}
+        //             '''
+        //         }
+        //     }
+        // }
 
         // stage('Sysdig Local Image Scan') {
         //     steps {
@@ -158,19 +159,19 @@ pipeline {
         //     }
         // }
 
-//         stage('Scan image') {
-//             steps {
-//                 withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SECURE_API_TOKEN')]) {
-//                     sh '''
-//                     VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
-//                     curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
-//                     chmod +x ./sysdig-cli-scanner
-//                     export SYSDIG_SECURE_TOKEN=${SECURE_API_TOKEN}
-//                     ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT} docker://${DOCKER_REPOSITORY}
-//                     '''
-//         }
-//     }
-// }
+        stage('Scan image') {
+            steps {
+                withCredentials([string(credentialsId: 'sysdig-secure-api-token', variable: 'SECURE_API_TOKEN')]) {
+                    sh '''
+                    VERSION=$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)
+                    curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/${VERSION}/linux/amd64/sysdig-cli-scanner"
+                    chmod +x ./sysdig-cli-scanner
+                    export SYSDIG_SECURE_TOKEN=${SECURE_API_TOKEN}
+                    SECURE_API_TOKEN="355724e1-2500-4666-bee2-5c323bddb2a1" ./sysdig-cli-scanner --apiurl ${SYSDIG_ENDPOINT}  docker://${DOCKER_REPOSITORY} 
+                    '''
+        }
+    }
+}
 
 
         stage('ECR Image Pushing') {
@@ -182,6 +183,39 @@ pipeline {
                 }
             }
         }
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', credentialsId: 'GITHUB', url: 'https://github.com/ShreyashSachan07/nginx-eks-pipeline.git'
+            }
+        }
+        stage('Update deployment image to github') {
+            environment {
+                GIT_REPO_NAME = "nginx-eks-pipeline"
+                GIT_USER_NAME = "ShreyashSachan07"
+            }
+            steps {
+                dir('nginx-eks-pipeline/k8s') {
+                    withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                        sh '''
+                            git config user.email 'devopstest@gmail.com'
+                            git config user.name 'ShreyashSachan07'
+                            git status
+                            BUILD_NUMBER=${BUILD_NUMBER}
+                            echo $BUILD_NUMBER
+                            imageTag=$(grep 'version:' nginx-deployment.yaml | awk '{print $2}')
+                            echo "Current nginx image version: $imageTag"
+                            sed -i "s|repo: .*|repo: ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}|" nginx-deployment.yaml
+                            echo "repo-name: $ECR_REPO_NAME"
+                            sed -i "s|version: .*|version: ${BUILD_NUMBER}|" nginx-deployment.yaml
+                            git add nginx-deployment.yaml
+                            git commit -m "Update Helm chart web microservice image to ${BUILD_NUMBER} and repository to ${ECR_REPO_NAME}"
+                            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:develop
+                        '''
+                    }
+                }
+            }
+        }
+    }
 
         // stage('Sysdig ECR Registry Scan') {
         //     steps {
